@@ -1,4 +1,4 @@
-"use strict"; 
+"use strict";
 
 const express = require('express');
 const { NotFoundError, BadRequestError } = require("../expressError");
@@ -8,15 +8,16 @@ const db = require('../db');
 const router = new express.Router();
 
 /** We've decided to limit code col in companies database to lower case codes
+ * Trust your users but verify
  * 
  * TODO: change any received 'code' to lowercase before accessing route
- * Trust your users but verify
+ * CODEREVIEW: consider adding tiny helper function for .toLowerCase(); allows for all-or-nothing
  */
 
 
 /** Get information for all companies  */
 router.get('/', async function (req, res, next) {
-    // console.log('Made it!')
+    console.log('Made it!')
     try {
         const result = await db.query(
             `SELECT code, name
@@ -24,15 +25,15 @@ router.get('/', async function (req, res, next) {
         const companies = result.rows;
         return res.json({ companies });
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 })
 
 /** Get information about one company */
 router.get('/:code', async function (req, res, next) {
-    let code = req.params.code.toLowerCase();
-    // console.log('THIS IS THE CODE:', code)
+    const code = req.params.code.toLowerCase();
+    console.log('THIS IS THE CODE:', code)
     try {
         const result = await db.query(
             `SELECT code, name, description
@@ -44,18 +45,18 @@ router.get('/:code', async function (req, res, next) {
 
         return res.json({ company });
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 })
 
 /** Add a company */
 router.post('/', async function (req, res, next) {
-    // console.log("running POST companies")
-    let {code, name, description} = req.body
-    code = code.toLowerCase(); 
-    // CODEREVIEW: consider adding tiny helper function for .toLowerCase(); allows for all-or-nothing
-    // console.log('{code, name, description}:', code, name, description)
+    console.log("running POST companies")
+    const { name, description } = req.body
+    const code = req.body.code.toLowerCase();
+    console.log('{code, name, description}:', code, name, description)
+
     try {
         const result = await db.query(
             `INSERT INTO companies (code, name, description)
@@ -67,16 +68,16 @@ router.post('/', async function (req, res, next) {
 
         return res.json({ company })
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 })
 /** Edit existing company.*/
 router.put('/:code', async function (req, res, next) {
-    // console.log("running PUT companies")
-    let code = req.params.code.toLowerCase();
-    let {name, description} = req.body
-    // console.log("code:", code, "name:", name, "description", description);
+    console.log("running PUT companies")
+    const code = req.params.code.toLowerCase();
+    const { name, description } = req.body
+    console.log("code:", code, "name:", name, "description", description);
 
     try {
         const result = await db.query(
@@ -90,29 +91,29 @@ router.put('/:code', async function (req, res, next) {
 
         return res.json({ company })
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 })
 
 /**Delete existing company.*/
 router.delete('/:code', async function (req, res, next) {
-    // console.log("running DElETE companies")
-    let code = req.params.code.toLowerCase();
-    // console.log("code", code)
+    console.log("running DElETE companies")
+    const code = req.params.code.toLowerCase();
+    console.log("code", code)
 
     try {
         const result = await db.query(
             `DELETE FROM companies
             WHERE code = $1
             RETURNING code, name, description`, [code]);
-            const company = result.rows[0];
+        const company = result.rows[0];
 
         if (!company) throw new NotFoundError(`Not found: ${code}`);
 
-        return res.json({status: "deleted"})
+        return res.json({ status: "deleted" })
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 })
