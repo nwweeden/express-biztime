@@ -7,9 +7,12 @@ const db = require('../db');
 
 const router = new express.Router();
 
-/** Get information for all invoices */
+/** TODO: update comments and console.logs to resemble get / */
+
+/** Return info on invoices: like {invoices: [{id, comp_code}, ...]} */
 router.get('/', async function (req, res, next) {
-    console.log('Show all Invoices Route')
+    // console.log('Show all Invoices Route')
+    console.log('get /invoices - show all invoices route')
     try {
         const result = await db.query(
             `SELECT id, comp_code
@@ -18,7 +21,7 @@ router.get('/', async function (req, res, next) {
         return res.json({ invoices });
     }
     catch(err){
-        next(err);
+        return next(err);
     }
 })
 
@@ -27,8 +30,10 @@ router.get('/:id', async function (req, res, next) {
     console.log('Route to show specific invoice')
     try {
         const id = req.params.id;
+        // avoid super long lines
         const iResult = await db.query(
-            `SELECT id, amt, paid, add_date, paid_date, comp_code AS company
+            `SELECT id, amt, paid, add_date, 
+                paid_date, comp_code
             FROM invoices
             WHERE id = $1`, [id]);
         const invoice = iResult.rows[0]
@@ -38,15 +43,16 @@ router.get('/:id', async function (req, res, next) {
         const cResult = await db.query(
             `SELECT code, name, description
             FROM companies
-            WHERE code = $1`, [invoice.company]);
+            WHERE code = $1`, [invoice.comp_code]);
         const company = cResult.rows[0];
+        delete invoice.comp_code;
         invoice.company = company;
         // console.log('THE COMPANY IS:', company)
 
         return res.json({ invoice });
     }
     catch(err){
-        next(err);
+        return next(err);
     }
 })
 
@@ -61,13 +67,14 @@ router.post('/', async function (req, res, next) {
             RETURNING id, comp_code, amt, paid, add_date, paid_date`,
             [comp_code, amt]);
         const invoice = result.rows[0]
-
-        if (!invoice) throw new BadRequestError(`Invoice not added. Please try again`);
+        // when working with a db, errors thrown for us. no need to throw
+        // if (!invoice) throw new BadRequestError(`Invoice not added. Please try again`);
         
         return res.json({ invoice })
     }
     catch(err){
-        next(err);
+        // can add conditional logic for error types 
+        return next(err);
     }
 })
 
@@ -83,7 +90,8 @@ router.put('/:id', async function (req, res, next) {
             `UPDATE invoices
             SET amt = $1
             WHERE id = $2
-            RETURNING id, comp_code, amt, paid, add_date, paid_date`, [amt, id]);
+            RETURNING id, comp_code, amt, paid, add_date, paid_date`,
+            [amt, id]);
         const invoice = result.rows[0];
 
         if (!invoice) throw new NotFoundError(`Not found: ${id}`);
@@ -91,7 +99,7 @@ router.put('/:id', async function (req, res, next) {
         return res.json({ invoice })
     }
     catch (err) {
-        next(err);
+        return next(err);
     }
 })
 
@@ -105,15 +113,16 @@ router.delete('/:id', async function (req, res, next) {
         const result = await db.query(
             `DELETE FROM invoices
             WHERE id = $1
-            RETURNING id, comp_code, amt, paid, add_date, paid_date`, [id]);
+            RETURNING id, comp_code, amt, paid, add_date, paid_date`, 
+            [id]);
         const invoice = result.rows[0];
 
         if (!invoice) throw new NotFoundError(`Not found: invoice ${id}`);
 
-        return res.json({ status: "deleted" })
+        return res.json({ status: "Deleted" })
     }
     catch (err) {
-        next(err);
+        return next(err);
     }
 })
 
